@@ -1,25 +1,21 @@
 import request from 'supertest';
 import { app } from '../../app';
-import { AuthUser } from '../../test/auth-user';
 
-it('cleans a cookie after signing out', async () => {
-    const cookie = await AuthUser.signin();
-    const response = await request(app)
-        .post('/api/users/signout')
-        .set('Cookie', cookie)
-        .send({})
-        .expect(200);
+it('clears the cookie after signing out', async () => {
+  await request(app)
+    .post('/api/users/signup')
+    .send({
+      email: 'test@test.com',
+      password: 'password'
+    })
+    .expect(201);
 
-    expect(response.get('Set-Cookie')[0]).toContain('express:sess=;');
-});
+  const response = await request(app)
+    .post('/api/users/signout')
+    .send({})
+    .expect(200);
 
-it('return a 400 error when singing out without a session', async () => {
-    const response = await request(app)
-        .post('/api/users/signout')
-        .send({})
-        .expect(400);
-
-    expect(response.body.errors).toEqual([{
-        message: 'Session is invalid'
-    }]);
+  expect(response.get('Set-Cookie')[0]).toEqual(
+    'express:sess=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; httponly'
+  );
 });

@@ -16,8 +16,10 @@ spec:
         - name: auth
           image: mindzoom/auth
           env:
+            - name: MONGO_URI
+              value: 'mongodb://auth-mongo-service:27017/auth'
             - name: JWT_KEY
-              valueFrom: 
+              valueFrom:
                 secretKeyRef:
                   name: jwt-secret
                   key: JWT_KEY

@@ -1,15 +1,11 @@
-import express, { Request, Response } from 'express';
-import BussinessError from '../errors/bussiness-error';
+import express from 'express';
 
 const router = express.Router();
 
-router.post('/api/users/signout', (req: Request, res: Response) => {
-    if (!req.session?.jwt) { 
-        throw new BussinessError('Session is invalid');
-    }
+router.post('/api/users/signout', (req, res) => {
+  req.session = null;
 
-    req.session = null;
-    res.send({});
+  res.send({});
 });
 
-export { router as signoutRouter }; 
+export { router as signoutRouter };

@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Router from 'next/router';
 import useRequest from '../../hooks/use-request';
 
-const SignUpPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const { doRequest, errors } = useRequest({
     url: '/api/users/signup',
     method: 'post',
@@ -15,20 +15,18 @@ const SignUpPage = () => {
     onSuccess: () => Router.push('/')
   });
 
-  const onSubmit = async (event) => {
+  const onSubmit = async event => {
     event.preventDefault();
 
-    const response = await doRequest();
-    console.log(response);
+    await doRequest();
   };
 
   return (
     <form onSubmit={onSubmit}>
       <h1>Sign Up</h1>
       <div className="form-group">
-        <label>Email</label>
+        <label>Email Address</label>
         <input
-          type="text"
           value={email}
           onChange={e => setEmail(e.target.value)}
           className="form-control"
@@ -37,16 +35,14 @@ const SignUpPage = () => {
       <div className="form-group">
         <label>Password</label>
         <input
-          type="password"
           value={password}
           onChange={e => setPassword(e.target.value)}
+          type="password"
           className="form-control"
         />
       </div>
       {errors}
-      <button className="btnbtn-primary">Sign Up</button>
+      <button className="btn btn-primary">Sign Up</button>
     </form>
   );
 };
-
-export default SignUpPage;

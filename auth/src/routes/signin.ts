@@ -1,46 +1,55 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import BussinessError from '../errors/bussiness-error';
-import { requestValidation } from '../middlewares/validation-request';
-import { User } from '../models/user';
+import { validateRequest, BadRequestError } from '@sgtickets/common';
+
 import { Password } from '../services/password';
+import { User } from '../models/user';
 
 const router = express.Router();
 
-const requestFieldsValidation = [
-    body('email')
-        .isEmail()
-        .withMessage('Email must be valid'),
+router.post(
+  '/api/users/signin',
+  [
+    body('email').isEmail().withMessage('Email must be valid'),
     body('password')
-        .trim()
-        .notEmpty()
-        .withMessage('Password must not be empty')
-];
+      .trim()
+      .notEmpty()
+      .withMessage('You must supply a password'),
+  ],
+  validateRequest,
+  async (req: Request, res: Response) => {
+    const { email, password } = req.body;
 
-router.post('/api/users/signin', requestFieldsValidation, requestValidation,
-    async (req: Request, res: Response) => {
-        const { email, password } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      throw new BadRequestError('Invalid credentials');
+    }
 
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            const isPasswordMatched = await Password.compare(existingUser.password, password);
+    const passwordsMatch = await Password.compare(
+      existingUser.password,
+      password
+    );
+    if (!passwordsMatch) {
+      throw new BadRequestError('Invalid Credentials');
+    }
 
-            if (isPasswordMatched) {
-                const jwtToken = jwt.sign({
-                    userid: existingUser.id,
-                    email: existingUser.email
-                }, process.env.JWT_KEY!);
-        
-                req.session = {
-                    jwt: jwtToken
-                };
+    // Generate JWT
+    const userJwt = jwt.sign(
+      {
+        id: existingUser.id,
+        email: existingUser.email,
+      },
+      process.env.JWT_KEY!
+    );
 
-                return res.send(existingUser);
-            }
-        }
+    // Store it on session object
+    req.session = {
+      jwt: userJwt,
+    };
 
-        throw new BussinessError('Invalid credentials');
-    });
+    res.status(200).send(existingUser);
+  }
+);
 
 export { router as signinRouter };
